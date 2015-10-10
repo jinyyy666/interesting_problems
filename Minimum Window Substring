@@ -11,3 +11,87 @@ Note:
 If there is no such window in S that covers all characters in T, return the empty string "".
 
 If there are multiple such windows, you are guaranteed that there will always be only one unique minimum window in S.
+
+
+class Solution {
+public:
+    string minWindow(string s, string t) {
+        // handle the special case:
+        if(t.empty() || s.empty())
+            return "";
+        
+        // string to be returned:
+        string ret;
+        string target_substr;
+        // 1. construct the hash table for counting the occurance of each letter in t:
+        //    and a hash table for remembering the latest location of that character
+        unordered_map<char, int> count;
+        unordered_map<char, int> loc;
+        for(int i = 0; i < t.length(); ++i){
+            // remember each letter in t (ignore the duplicates)
+            if(count.find(t[i]) == count.end())
+                count[t[i]] = 0;
+            // initialize the location:
+            if(loc.find(t[i]) == loc.end())
+                loc[t[i]] = 0;
+        }
+        
+        int start = 0;
+        int num_letter = 0;
+        // 2. Linear scan the string s to find out the minimum window:
+        // The idea here is to keep track of each substring that covers the t
+        // After find out such string, increase the "start" such as only one character in 
+        // the string t is missing. Then continue scanning.
+        for(int i = 0; i < s.length(); ++i){
+            // if facing the continous duplicate chars, increase start:
+            if(i !=0  && s[i] == s[i-1] && count.find(s[i]) != count.end())
+                start++;
+            // if a character of t is found in string t:
+            if(count.find(s[i]) != count.end()){
+                // if the start location has not been assigned, assigned it here:
+                if(start == 0)
+                    start = i;
+                // if this is not a duplicate, increase num_letter
+                if(count[s[i]] == 0){
+                    num_letter++;
+                }
+                // count this character:
+                count[s[i]]++;
+                // remember the location:
+                loc[s[i]] = i;
+            }
+            // if all the characters in t has been cover, then remember this substring:
+            if(num_letter == t.length()){
+                num_letter--;
+                target_substr = s.substr(start, i - start + 1);
+                if(ret.empty())
+                    ret = target_substr;
+                else
+                    ret = ret.length() > target_substr.length() ? target_substr : ret;
+                
+                // find the latest character in t with the minimum location and set its occurance to zero:
+                int min_loc = s.length();
+                char min_c;
+                for(auto it = loc.begin(); it != loc.end(); ++it){
+                    if(it->second < min_loc){
+                        min_loc = it->second;
+                        min_c = it->first;
+                    }
+                }
+                count[min_c] = 0;
+                assert(loc.find(min_c) != loc.end());
+                loc[min_c] = s.length();
+                min_loc = s.length();
+                
+                // find the new start for the substr, which is the second minimum location in the original loc hash table:
+                for(auto it = loc.begin(); it != loc.end(); ++it){
+                    if(it->second < min_loc){
+                        min_loc = it->second;
+                    }
+                }
+                start = min_loc;
+            }
+        }
+        return ret;
+    }
+};
